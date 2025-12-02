@@ -50,37 +50,6 @@ stages:
   jobs:
     - job: DeployJob
       steps:
-
-        # 1. Download Build Artifact to Agent
-        - task: DownloadBuildArtifacts@1
-          inputs:
-            buildType: 'current'
-            downloadType: 'single'
-            artifactName: 'testjava'
-            downloadPath: '$(System.ArtifactsDirectory)'
-
-        - task: CopyFilesOverSSH@0
-          inputs:
-            sshEndpoint: 'dev-ssh-connection'
-            sourceFolder: '$(System.ArtifactsDirectory)/testjava/claim-notification-service/target'''
-            contents: '**/*.jar'
-            targetFolder: '/opt/app'
-            readyTimeout: '20000'
-
-        # # 2. Upload JAR to VM using SCP
-
-        # - task: SSH@0
-        #   displayName: "Upload JAR to VM"
-        #   inputs:
-        #     sshEndpoint: 'dev-ssh-connection'
-        #     runOptions: 'inline'
-        #     inline: |
-        #       echo "Copying JAR to VM..."
-        #       sudo mkdir -p /opt/app
-        #     commands: |
-        #       scp $(System.ArtifactsDirectory)/testjava/claim-notification-service/target/*.jar ***@20.238.39.118:/opt/app/
-
-
         # 1. Download Build Artifact
         - task: DownloadBuildArtifacts@1
           inputs:
