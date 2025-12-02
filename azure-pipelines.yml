@@ -46,14 +46,12 @@ stages:
 # DEPLOY STAGE
 # -------------------------
 - stage: Deploy
-  displayName: "Deploy Stage"
   dependsOn: Build
-  condition: succeeded()
   jobs:
     - job: DeployJob
-      displayName: "Deploy to VM"
       steps:
 
+        # 1. Download Build Artifact to Agent
         - task: DownloadBuildArtifacts@1
           inputs:
             buildType: 'current'
@@ -61,24 +59,29 @@ stages:
             artifactName: 'testjava'
             downloadPath: '$(System.ArtifactsDirectory)'
 
+        # 2. Upload JAR to VM using SCP
         - task: SSH@0
-          displayName: "Copy JAR to VM"
+          displayName: "Upload JAR to VM"
           inputs:
             sshEndpoint: 'dev-ssh-connection'
-            runOptions: 'commands'
-            commands: |
-              echo "Deploying JAR..."
+            runOptions: 'inline'
+            inline: |
+              echo "Copying JAR to VM..."
               sudo mkdir -p /opt/app
-              sudo cp $(System.ArtifactsDirectory)/testjava/*.jar /opt/app/
+            # Now transfer actual files
+            readyTimeout: '20000'
+            commands: |
+              scp $(System.ArtifactsDirectory)/testjava/*.jar ***@20.238.39.118:/opt/app/
 
-        # OPTIONAL (start application)
+        # 3. Run Java App on VM
         - task: SSH@0
-          displayName: "Start Spring Boot App"
+          displayName: "Start Application"
           inputs:
             sshEndpoint: 'dev-ssh-connection'
-            runOptions: 'commands'
-            commands: |
-              echo "Starting application..."
-              sudo nohup java -jar /opt/app/*.jar > app.log 2>&1 &
+            runOptions: 'inline'
+            inline: |
+              echo "Starting Java App..."
+              sudo nohup java -jar /opt/app/*.jar > /opt/app/app.log 2>&1 &
+
 
               
