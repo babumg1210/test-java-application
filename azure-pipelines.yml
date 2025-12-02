@@ -59,18 +59,26 @@ stages:
             artifactName: 'testjava'
             downloadPath: '$(System.ArtifactsDirectory)'
 
-        # 2. Upload JAR to VM using SCP
-
-        - task: SSH@0
-          displayName: "Upload JAR to VM"
+        - task: CopyFilesOverSSH@0
           inputs:
             sshEndpoint: 'dev-ssh-connection'
-            runOptions: 'inline'
-            inline: |
-              echo "Copying JAR to VM..."
-              sudo mkdir -p /opt/app
-            commands: |
-              scp $(System.ArtifactsDirectory)/testjava/claim-notification-service/target/*.jar ***@20.238.39.118:/opt/app/
+            sourceFolder: '$(System.ArtifactsDirectory)/testjava/claim-notification-service/target'''
+            contents: '**/*.jar'
+            targetFolder: '/opt/app'
+            readyTimeout: '20000'
+
+        # # 2. Upload JAR to VM using SCP
+
+        # - task: SSH@0
+        #   displayName: "Upload JAR to VM"
+        #   inputs:
+        #     sshEndpoint: 'dev-ssh-connection'
+        #     runOptions: 'inline'
+        #     inline: |
+        #       echo "Copying JAR to VM..."
+        #       sudo mkdir -p /opt/app
+        #     commands: |
+        #       scp $(System.ArtifactsDirectory)/testjava/claim-notification-service/target/*.jar ***@20.238.39.118:/opt/app/
 
 
         # 3. Run Java App on VM
