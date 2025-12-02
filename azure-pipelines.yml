@@ -67,7 +67,7 @@ stages:
             sshEndpoint: 'dev-ssh-connection'
             sourceFolder: '$(System.ArtifactsDirectory)/testjava/claim-notification-service/target'
             contents: '**/*.jar'
-            targetFolder: '/opt/app'
+            targetFolder: '/home/azureuser/app'
             readyTimeout: '20000'
 
         # 3. Start Java App on VM
@@ -77,11 +77,11 @@ stages:
             sshEndpoint: 'dev-ssh-connection'
             runOptions: 'inline'
             inline: |
-              echo "Cleaning Old JARs"
-              sudo rm -f /opt/app/*.jar
-
-              echo "Starting Java App..."
+              echo "Deploying & Starting App..."
+              sudo mkdir -p /opt/app
+              sudo mv /home/azureuser/app/*.jar /opt/app/
               sudo sh -c "nohup java -jar /opt/app/*.jar > /opt/app/app.log 2>&1 &"
+
 
 
 
