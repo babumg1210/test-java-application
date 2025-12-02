@@ -68,8 +68,8 @@ stages:
             runOptions: 'commands'
             commands: |
               echo "Deploying JAR..."
-              mkdir -p /opt/app
-              cp $(System.ArtifactsDirectory)/testjava/*.jar /opt/app/
+              sudo mkdir -p /opt/app
+              sudo cp $(System.ArtifactsDirectory)/testjava/*.jar /opt/app/
 
         # OPTIONAL (start application)
         - task: SSH@0
@@ -79,6 +79,6 @@ stages:
             runOptions: 'commands'
             commands: |
               echo "Starting application..."
-              nohup java -jar /opt/app/*.jar > app.log 2>&1 &
+              sudo nohup java -jar /opt/app/*.jar > app.log 2>&1 &
 
               
