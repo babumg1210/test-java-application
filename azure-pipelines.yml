@@ -81,7 +81,8 @@ stages:
             runOptions: 'inline'
             inline: |
               echo "Starting Java App..."
-              sudo nohup java -jar /opt/app/*.jar > /opt/app/app.log 2>&1 &
+              sudo sh -c "nohup java -jar /opt/app/*.jar > /opt/app/app.log 2>&1 &"
+
 
 
               
