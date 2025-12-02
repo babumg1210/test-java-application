@@ -60,6 +60,7 @@ stages:
             downloadPath: '$(System.ArtifactsDirectory)'
 
         # 2. Upload JAR to VM using SCP
+
         - task: SSH@0
           displayName: "Upload JAR to VM"
           inputs:
@@ -68,10 +69,9 @@ stages:
             inline: |
               echo "Copying JAR to VM..."
               sudo mkdir -p /opt/app
-            # Now transfer actual files
-            readyTimeout: '20000'
             commands: |
-              scp $(System.ArtifactsDirectory)/testjava/*.jar ***@20.238.39.118:/opt/app/
+              scp $(System.ArtifactsDirectory)/testjava/claim-notification-service/target/*.jar ***@20.238.39.118:/opt/app/
+
 
         # 3. Run Java App on VM
         - task: SSH@0
