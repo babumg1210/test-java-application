@@ -81,15 +81,39 @@ stages:
         #       scp $(System.ArtifactsDirectory)/testjava/claim-notification-service/target/*.jar ***@20.238.39.118:/opt/app/
 
 
-        # 3. Run Java App on VM
+        # 1. Download Build Artifact
+        - task: DownloadBuildArtifacts@1
+          inputs:
+            buildType: 'current'
+            downloadType: 'single'
+            artifactName: 'testjava'
+            downloadPath: '$(System.ArtifactsDirectory)'
+
+        # 2. Copy JAR to VM
+        - script: ls -R $(System.ArtifactsDirectory)
+          displayName: "DEBUG — List Artifacts"
+
+        - task: CopyFilesOverSSH@0
+          inputs:
+            sshEndpoint: 'dev-ssh-connection'
+            sourceFolder: '$(System.ArtifactsDirectory)/testjava/claim-notification-service/target'
+            contents: '**/*.jar'
+            targetFolder: '/opt/app'
+            readyTimeout: '20000'
+
+        # 3. Start Java App on VM
         - task: SSH@0
           displayName: "Start Application"
           inputs:
             sshEndpoint: 'dev-ssh-connection'
             runOptions: 'inline'
             inline: |
+              echo "Cleaning Old JARs"
+              sudo rm -f /opt/app/*.jar
+
               echo "Starting Java App..."
               sudo sh -c "nohup java -jar /opt/app/*.jar > /opt/app/app.log 2>&1 &"
+
 
 
 
