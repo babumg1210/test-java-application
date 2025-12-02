@@ -17,7 +17,7 @@ stages:
           - task: Maven@4
             inputs:
               azureSubscription: 'test-sc'
-              mavenPomFile: 'pom.xml'
+              mavenPomFile: 'claim-notification-service/pom.xml'
               publishJUnitResults: true
               testResultsFiles: '**/surefire-reports/TEST-*.xml'
               javaHomeOption: 'JDKVersion'
