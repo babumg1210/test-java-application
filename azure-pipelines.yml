@@ -7,31 +7,78 @@ pool:
   name: Default
 
 stages:
-  - stage: Build
-    displayName: "Build Stage"
-    jobs:
-      - job: Build_Application
-        displayName: "Build Spring Boot Application"
-        steps:
 
-          - task: Maven@4
-            inputs:
-              azureSubscription: 'test-sc'
-              mavenPomFile: 'claim-notification-service/pom.xml'
-              publishJUnitResults: true
-              testResultsFiles: '**/surefire-reports/TEST-*.xml'
-              javaHomeOption: 'JDKVersion'
-              mavenVersionOption: 'Default'
-              mavenAuthenticateFeed: false
-              effectivePomSkip: false
-              sonarQubeRunAnalysis: false
-          - task: CopyFiles@2
-            inputs:
-              Contents: '**/*.jar'
-              TargetFolder: '$(Build.ArtifactStagingDirectory)'
-          
-          - task: PublishBuildArtifacts@1
-            inputs:
-              PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-              ArtifactName: 'testjava'
-              publishLocation: 'Container'
+# -------------------------
+# BUILD STAGE
+# -------------------------
+- stage: Build
+  displayName: "Build Stage"
+  jobs:
+    - job: Build_Application
+      displayName: "Build Spring Boot Application"
+      steps:
+
+        - task: Maven@4
+          inputs:
+            azureSubscription: 'test-sc'
+            mavenPomFile: 'claim-notification-service/pom.xml'
+            publishJUnitResults: true
+            testResultsFiles: '**/surefire-reports/TEST-*.xml'
+            javaHomeOption: 'JDKVersion'
+            mavenVersionOption: 'Default'
+            mavenAuthenticateFeed: false
+            effectivePomSkip: false
+            sonarQubeRunAnalysis: false
+
+        - task: CopyFiles@2
+          inputs:
+            Contents: 'claim-notification-service/target/*.jar'
+            TargetFolder: '$(Build.ArtifactStagingDirectory)'
+
+        - task: PublishBuildArtifacts@1
+          inputs:
+            PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+            ArtifactName: 'testjava'
+            publishLocation: 'Container'
+
+
+# -------------------------
+# DEPLOY STAGE
+# -------------------------
+- stage: Deploy
+  displayName: "Deploy Stage"
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+    - job: DeployJob
+      displayName: "Deploy to VM"
+      steps:
+
+        - task: DownloadBuildArtifacts@1
+          inputs:
+            buildType: 'current'
+            downloadType: 'single'
+            artifactName: 'testjava'
+            downloadPath: '$(System.ArtifactsDirectory)'
+
+        - task: SSH@0
+          displayName: "Copy JAR to VM"
+          inputs:
+            sshEndpoint: 'dev-ssh-connection'
+            runOptions: 'commands'
+            commands: |
+              echo "Deploying JAR..."
+              mkdir -p /opt/app
+              cp $(System.ArtifactsDirectory)/testjava/*.jar /opt/app/
+
+        # OPTIONAL (start application)
+        - task: SSH@0
+          displayName: "Start Spring Boot App"
+          inputs:
+            sshEndpoint: 'dev-ssh-connection'
+            runOptions: 'commands'
+            commands: |
+              echo "Starting application..."
+              nohup java -jar /opt/app/*.jar > app.log 2>&1 &
+
+              
