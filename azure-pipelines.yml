@@ -27,6 +27,6 @@ stages:
               sonarQubeRunAnalysis: false
           - task: CopyFiles@2
             inputs:
-              Contents: '**/.*jar'
+              Contents: '**/*.jar'
               TargetFolder: '$(Build.ArtifactStagingDirectory)'
           
