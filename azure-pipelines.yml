@@ -82,6 +82,27 @@ stages:
               sudo mv /home/azureuser/app/*.jar /opt/app/
               sudo sh -c "nohup java -jar /opt/app/*.jar > /opt/app/app.log 2>&1 &"
 
+        # 4. HEALTH CHECK (Important)
+        - task: SSH@0
+          displayName: "Health Check - Application Status"
+          inputs:
+            sshEndpoint: 'dev-ssh-connection'
+            runOptions: 'inline'
+            inline: |
+              echo "Checking application health..."
+
+              # Wait for app to start
+              sleep 10
+
+              # Hit the actuator health endpoint
+              RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/health)
+
+              if [ "$RESPONSE" = "200" ]; then
+                echo "Health Check PASSED"
+              else
+                echo "Health Check FAILED - HTTP $RESPONSE"
+                exit 1
+              fi
 
 
 
