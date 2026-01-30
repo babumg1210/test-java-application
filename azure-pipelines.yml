@@ -20,7 +20,7 @@ stages:
 
         - task: Maven@4
           inputs:
-            azureSubscription: 'test-sc'
+            azureSubscription: 'java-sc'
             mavenPomFile: 'claim-notification-service/pom.xml'
             publishJUnitResults: true
             testResultsFiles: '**/surefire-reports/TEST-*.xml'
@@ -40,71 +40,6 @@ stages:
             PathtoPublish: '$(Build.ArtifactStagingDirectory)'
             ArtifactName: 'testjava'
             publishLocation: 'Container'
-
-
-# -------------------------
-# DEPLOY STAGE
-# -------------------------
-- stage: Deploy
-  dependsOn: Build
-  jobs:
-    - job: DeployJob
-      steps:
-        # 1. Download Build Artifact
-        - task: DownloadBuildArtifacts@1
-          inputs:
-            buildType: 'current'
-            downloadType: 'single'
-            artifactName: 'testjava'
-            downloadPath: '$(System.ArtifactsDirectory)'
-
-        # 2. Copy JAR to VM
-        - script: ls -R $(System.ArtifactsDirectory)
-          displayName: "DEBUG — List Artifacts"
-
-        - task: CopyFilesOverSSH@0
-          inputs:
-            sshEndpoint: 'dev-ssh-connection'
-            sourceFolder: '$(System.ArtifactsDirectory)/testjava/claim-notification-service/target'
-            contents: '**/*.jar'
-            targetFolder: '/home/azureuser/app'
-            readyTimeout: '20000'
-
-        # 3. Start Java App on VM
-        - task: SSH@0
-          displayName: "Start Application"
-          inputs:
-            sshEndpoint: 'dev-ssh-connection'
-            runOptions: 'inline'
-            inline: |
-              echo "Deploying & Starting App..."
-              sudo mkdir -p /opt/app
-              sudo mv /home/azureuser/app/*.jar /opt/app/
-              sudo sh -c "nohup java -jar /opt/app/*.jar > /opt/app/app.log 2>&1 &"
-
-        # 4. HEALTH CHECK (Important)
-        - task: SSH@0
-          displayName: "Health Check - Application Status"
-          inputs:
-            sshEndpoint: 'dev-ssh-connection'
-            runOptions: 'inline'
-            inline: |
-              echo "Checking application health..."
-
-              # Wait for app to start
-              sleep 10
-
-              # Hit the actuator health endpoint
-              RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/health)
-
-              if [ "$RESPONSE" = "200" ]; then
-                echo "Health Check PASSED"
-              else
-                echo "Health Check FAILED - HTTP $RESPONSE"
-                exit 1
-              fi
-
-
 
 
               
