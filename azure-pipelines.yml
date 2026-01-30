@@ -20,7 +20,7 @@ stages:
 
         - task: Maven@4
           inputs:
-            azureSubscription: 'java-sc'
+            azureSubscription: 'scholas-sp'
             mavenPomFile: 'claim-notification-service/pom.xml'
             publishJUnitResults: true
             testResultsFiles: '**/surefire-reports/TEST-*.xml'
