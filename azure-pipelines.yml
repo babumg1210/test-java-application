@@ -41,5 +41,55 @@ stages:
             ArtifactName: 'testjava'
             publishLocation: 'Container'
 
+# -------------------------
+# DEPLOY STAGE (Azure Web App)
+# -------------------------
+- stage: Deploy
+  dependsOn: Build
+  displayName: Deploy to Azure Web App
+  jobs:
+    - job: DeployJob
+      displayName: Deploy JAR
+      steps:
 
-              
+        # 1. Download Build Artifact
+        - task: DownloadBuildArtifacts@1
+          inputs:
+            buildType: 'current'
+            downloadType: 'single'
+            artifactName: 'testjava'
+            downloadPath: '$(Pipeline.Workspace)'
+
+        # 2. Debug – verify JAR
+        - script: |
+            echo "Listing artifacts..."
+            ls -R $(Pipeline.Workspace)
+          displayName: "DEBUG — List Artifacts"
+
+        # 3. Deploy JAR to Azure Web App
+        - task: AzureWebApp@1
+          displayName: "Deploy JAR to Azure Web App"
+          inputs:
+            azureSubscription: 'scholas-sp'
+            appType: 'webAppLinux'
+            appName: 'java17-webapp-prod'
+            package: '$(Pipeline.Workspace)/testjava/**/target/*.jar'
+            runtimeStack: 'JAVA|17'
+            deploymentMethod: 'zipDeploy'
+
+        # 4. Health Check
+        - script: |
+            echo "Waiting for app to start..."
+            sleep 30
+
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://java17-webapp-prod.azurewebsites.net/actuator/health)
+
+            if [ "$STATUS" = "200" ]; then
+              echo "Health Check PASSED"
+            else
+              echo "Health Check FAILED - HTTP $STATUS"
+              exit 1
+            fi
+          displayName: "Health Check"
+
+      
